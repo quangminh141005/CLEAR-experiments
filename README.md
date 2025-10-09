@@ -81,7 +81,7 @@ examples/         Research scripts and notebooks rewritten to import the package
 scripts/          Standalone data preparation and legacy utilities.
 pyproject.toml    Packaging metadata for building or installing CLEAR.
 README.md         This document.
-LICENSE           MIT licence text.
+LICENSE           Apache-2.0 License.
 ```
 
 ## License
