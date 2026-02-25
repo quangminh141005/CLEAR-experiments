@@ -345,7 +345,15 @@ def run_concept_based_evaluation(dataset_name="chexpert", llm_model="openai"):
     
     # Reuse the same embedding generator from Step 0
     
-    # Generate class prompts
+    # --- Explicit negation handling via positive/negative prompt pairs ---
+    # For each diagnostic label we construct two prompts: a positive prompt
+    # (e.g. "atelectasis") and a negative prompt (e.g. "no atelectasis").
+    # Both are independently embedded by the LLM encoder, and the final
+    # prediction probability is obtained by applying a softmax over the
+    # cosine similarities of the image embedding with the positive and
+    # negative prompt embeddings (see Step 8 below).  This ensures negation
+    # is handled explicitly at evaluation time rather than relying on the
+    # model to implicitly encode the absence of a finding.
     pos_prompts = [f"{label.lower()}" for label in test_labels]
     neg_prompts = [f"no {label.lower()}" for label in test_labels]
     
@@ -376,11 +384,15 @@ def run_concept_based_evaluation(dataset_name="chexpert", llm_model="openai"):
     
     print("\n=== Step 8: Compute Predictions ===")
     with torch.no_grad():
-        # Calculate similarities between LLM representation and class embeddings
+        # Compute cosine similarities between each image's LLM-space
+        # representation and the positive / negative class embeddings.
         logits_pos = llm_representation @ pos_class_embeddings.T
         logits_neg = llm_representation @ neg_class_embeddings.T
-        
-        # Apply softmax to get probabilities
+
+        # Softmax over the positive and negative logits for each label:
+        #   P(label) = exp(sim_pos) / (exp(sim_pos) + exp(sim_neg))
+        # This is mathematically equivalent to sigmoid(sim_pos - sim_neg)
+        # and constitutes the explicit negation handling mechanism.
         exp_logits_pos = torch.exp(logits_pos)
         exp_logits_neg = torch.exp(logits_neg)
         probabilities = exp_logits_pos / (exp_logits_pos + exp_logits_neg)

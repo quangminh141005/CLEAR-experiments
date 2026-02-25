@@ -183,6 +183,10 @@ class ZeroShotPipeline:
             features = self.encode_images(images)
             embeddings = self.project_to_concept_space(features)
 
+            # Explicit negation handling: compute cosine similarity of each
+            # image embedding against both the positive and negative prompt
+            # embeddings, then softmax over the pair so that
+            #   P(label) = softmax([sim_pos, sim_neg])[0].
             pos = embeddings @ pos_matrix.T
             neg = embeddings @ neg_matrix.T
             stacked = torch.stack((pos, neg), dim=-1)
