@@ -91,6 +91,21 @@ README.md         This document.
 LICENSE           Apache-2.0 licence text.
 ```
 
+## Citation
+
+If you find this work useful, please cite our paper:
+
+```bibtex
+@article{han2026clear,
+  title={CLEAR: An Auditable Foundation Model for Radiology Grounded in Clinical Concepts},
+  author={Han, Tianyu and Wu, Riga and Tian, Yu and Khader, Firas and Adams, Lisa and Bressem, Keno and Davatzikos, Christos and Kather, Jakob Nikolas and Shen, Li and Mankoff, David and others},
+  journal={medRxiv},
+  pages={2026--01},
+  year={2026},
+  publisher={Cold Spring Harbor Laboratory Press}
+}
+```
+
 ## License
 
 All code in this repository is released under the Apache-2.0 License. Portions derived from the OpenAI
