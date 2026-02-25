@@ -29,49 +29,56 @@ from other projects.
 
 ## Quick Start
 
+The example below loads the CLEAR vision-language backbone and computes
+similarity scores between a chest X-ray and radiological text prompts.
+Model weights are available at
+[huggingface.co/peterhan91/CLEAR](https://huggingface.co/peterhan91/CLEAR).
+
 ```python
-import numpy as np
-from torch.utils.data import DataLoader
+import torch
+from PIL import Image
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, InterpolationMode
 
-from clear import (
-    ConceptBank,
-    PromptPair,
-    PromptSet,
-    ZeroShotPipeline,
-    load,
+from clear.model import CLIP
+from clear import tokenize
+from examples.train import load_clip
+
+# 1. Load the CLEAR checkpoint (DINOv2 ViT-B/14 + text encoder).
+model = load_clip(
+    model_path="checkpoints/dinov2-multi-v1.0_vitb/best_model.pt",
+    use_dinov2=True,
+    dinov2_model_name="dinov2_vitb14",
 )
+model.eval()
 
-# 1. Load the pretrained CLEAR checkpoint and preprocessing transform.
-model, preprocess = load("ViT-B/32", device="cpu", jit=False)
+# 2. Preprocess a chest X-ray.
+preprocess = Compose([
+    Resize(448, interpolation=InterpolationMode.BICUBIC),
+    CenterCrop(448),
+    ToTensor(),
+    Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+device = next(model.parameters()).device
+image = preprocess(Image.open("path/to/cxr.jpg").convert("RGB")).unsqueeze(0).to(device)
 
-# 2. Instantiate the concept bank (paths point to your precomputed artefacts).
-concept_bank = ConceptBank.from_files(
-    "assets/concepts.jsonl",
-    clip_embeddings_path="assets/concepts_clip_embeddings.npz",
-    llm_embeddings_path="assets/concepts_llm_embeddings.npz",
-)
+# 3. Encode image and text.
+with torch.no_grad():
+    image_features = model.encode_image(image)
+    text_tokens = tokenize(["pleural effusion", "no pleural effusion"]).to(device)
+    text_features = model.encode_text(text_tokens)
 
-# 3. Build a PyTorch dataloader that yields preprocessed images.
-dataloader = DataLoader(...)
+    # 4. Cosine similarity → softmax probability.
+    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+    logits = (image_features @ text_features.T).softmax(dim=-1)
 
-# 4. Define positive/negative prompt pairs for each label.
-prompts = PromptSet({
-    "Atelectasis": PromptPair(["atelectasis"], ["no atelectasis"]),
-    "Pleural Effusion": PromptPair(["pleural effusion"], ["no pleural effusion"]),
-})
-
-# 5. Provide an embedding lookup that returns the LLM embeddings for prompts.
-prompt_vectors = np.load("assets/prompt_embeddings.npy", allow_pickle=True).item()
-
-def embed_prompts(texts):
-    return np.stack([prompt_vectors[text] for text in texts], axis=0).astype("float32")
-
-# 6. Run concept-based zero-shot inference.
-pipeline = ZeroShotPipeline(model, concept_bank)
-result = pipeline.predict(dataloader, prompts, embed_fn=embed_prompts)
-
-print(result.probabilities["Atelectasis"][:5])
+print(logits)  # [[prob_positive, prob_negative]]
 ```
+
+The full CLEAR pipeline projects these concept similarity scores through
+LLM-derived semantic embeddings (SFR-Embedding-Mistral) for auditable
+zero-shot classification. See `examples/` for benchmarking, concept
+bottleneck models, and model auditing scripts.
 
 ## Repository Layout
 
@@ -81,7 +88,7 @@ examples/         Research scripts and notebooks rewritten to import the package
 scripts/          Standalone data preparation and legacy utilities.
 pyproject.toml    Packaging metadata for building or installing CLEAR.
 README.md         This document.
-LICENSE           Apache-2.0 License.
+LICENSE           Apache-2.0 licence text.
 ```
 
 ## License
