@@ -1,0 +1,73 @@
+cff-version: 1.2.0
+message: "If you use CLEAR, please cite the Nature Biomedical Engineering article."
+title: "CLEAR: Concept-Level Embeddings for Auditable Radiology"
+type: software
+authors:
+  - family-names: Han
+    given-names: Tianyu
+    orcid: "https://orcid.org/0000-0002-8636-6462"
+  - family-names: Wu
+    given-names: Riga
+  - family-names: Tian
+    given-names: Yu
+  - family-names: Khader
+    given-names: Firas
+  - family-names: Adams
+    given-names: Lisa C.
+    orcid: "https://orcid.org/0000-0001-5836-4542"
+  - family-names: Bressem
+    given-names: Keno K.
+    orcid: "https://orcid.org/0000-0001-9249-8624"
+  - family-names: Davatzikos
+    given-names: Christos
+    orcid: "https://orcid.org/0000-0002-1025-8561"
+  - family-names: Kather
+    given-names: Jakob Nikolas
+  - family-names: Shen
+    given-names: Li
+    orcid: "https://orcid.org/0000-0002-5443-0503"
+  - family-names: Mankoff
+    given-names: David A.
+  - family-names: Barbosa
+    given-names: Eduardo Mortani
+    name-suffix: Jr.
+  - family-names: Truhn
+    given-names: Daniel
+    orcid: "https://orcid.org/0000-0002-9605-0728"
+repository-code: "https://github.com/peterhan91/CLEAR"
+url: "https://github.com/peterhan91/CLEAR"
+license: Apache-2.0
+version: 0.1.0
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Han
+      given-names: Tianyu
+    - family-names: Wu
+      given-names: Riga
+    - family-names: Tian
+      given-names: Yu
+    - family-names: Khader
+      given-names: Firas
+    - family-names: Adams
+      given-names: Lisa C.
+    - family-names: Bressem
+      given-names: Keno K.
+    - family-names: Davatzikos
+      given-names: Christos
+    - family-names: Kather
+      given-names: Jakob Nikolas
+    - family-names: Shen
+      given-names: Li
+    - family-names: Mankoff
+      given-names: David A.
+    - family-names: Barbosa
+      given-names: Eduardo Mortani
+      name-suffix: Jr.
+    - family-names: Truhn
+      given-names: Daniel
+  title: "CLEAR: an auditable foundation model for radiology grounded in clinical concepts"
+  journal: Nature Biomedical Engineering
+  year: 2026
+  doi: "10.1038/s41551-026-01741-4"
+  url: "https://doi.org/10.1038/s41551-026-01741-4"

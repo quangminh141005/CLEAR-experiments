@@ -1,112 +1,204 @@
 # CLEAR
 
-Concept-Level Embeddings for Auditable Radiology (CLEAR) packages the tooling behind the paper
-*CLEAR: An Auditable Foundation Model for Radiology Grounded in Clinical Concepts*. The code base
-follows a standard Python package layout so it is straightforward to install, extend, and import
-from other projects.
+**Concept-Level Embeddings for Auditable Radiology**
 
-## Features
+> A medical AI model can be right for the wrong reason. CLEAR makes the reason
+> inspectable by grounding chest X-ray representations in radiological concepts.
 
-- Thin wrapper around CLIP checkpoints with reliable download and tokenisation utilities.
-- Concept-bank utilities for loading the radiological observation space (CLIP and LLM embeddings).
-- A streaming zero-shot pipeline that projects images into the LLM concept space without requiring
-  the full concept matrix in accelerator memory.
-- Metric helpers for threshold search, F1, Matthews correlation coefficient analysis, and
-  bootstrapped confidence intervals.
-- Example scripts for benchmarking, model auditing, and concept bottleneck experiments.
+**Published in _Nature Biomedical Engineering_ on 22 July 2026.**
+
+[Open-access paper](https://www.nature.com/articles/s41551-026-01741-4) |
+[DOI](https://doi.org/10.1038/s41551-026-01741-4) |
+[Model and concept bank](https://huggingface.co/peterhan91/CLEAR) |
+[Code](https://github.com/peterhan91/CLEAR) |
+[Citation](#citation)
+
+CLEAR maps a chest X-ray to similarities with **368,294 report-derived
+radiological observations**, then projects those concept scores through a large
+language model (LLM) embedding space. This makes a prediction decomposable into
+weighted contributions from individual observations and supports concept-level
+zero-shot classification, model auditing, and concept bottleneck models.
+
+The published model was pretrained on **873,342 image-report pairs from 239,391
+patients** and externally evaluated on four physician-annotated datasets from
+the United States, Europe, and Asia. In the paper's enlarged-cardiomediastinum
+case study, concept auditing exposed reliance on atelectasis-related concepts;
+retaining clinically relevant mediastinal concepts and refitting the lightweight
+classifier improved AUROC from **0.727 to 0.784** without retraining the image
+encoder.
+
+```mermaid
+flowchart LR
+    A[Chest X-ray] --> B[CLEAR image encoder]
+    B --> C[Similarity to 368,294<br/>radiological observations]
+    C --> D[LLM semantic projection]
+    D --> E[Concept-based image embedding]
+    C --> F[Concept-level auditing]
+    E --> G[Zero-shot and supervised tasks]
+    E --> H[Concept bottleneck models]
+```
+
+## What is in this repository
+
+- The CLEAR DINOv2 ViT-B/14 image encoder and paired radiology text encoder.
+- A Hugging Face-backed loader with the paper's 448 x 448 preprocessing.
+- Concept-bank and streaming projection utilities for the full observation
+  space without placing every concept embedding on accelerator memory at once.
+- Research scripts for benchmarking, zero-shot evaluation, model auditing,
+  linear probing, and concept bottleneck experiments.
+- Metric utilities for threshold search, F1, Matthews correlation coefficient,
+  and bootstrap confidence intervals.
 
 ## Installation
 
-1. Ensure you are running Python 3.9 or newer.
-2. (Optional) Create and activate a virtual environment.
-3. Install the package in editable mode:
+CLEAR requires Python 3.10 or newer. Clone the repository and install it in an
+environment with a PyTorch build appropriate for your hardware:
 
-   ```bash
-   pip install -e .[visualization]
-   ```
+```bash
+git clone https://github.com/peterhan91/CLEAR.git
+cd CLEAR
+pip install -e '.[visualization]'
+```
 
-   The optional `visualization` extra pulls in matplotlib for plotting utilities.
+The `visualization` extra installs Matplotlib for the plotting utilities. Model
+weights are downloaded from Hugging Face on first use and cached locally. The
+loader also obtains the DINOv2 architecture code through `torch.hub`; the CLEAR
+checkpoint supplies all model weights.
 
-## Quick Start
+## Quick start: vision-language backbone
 
-The example below loads the CLEAR vision-language backbone and computes
-similarity scores between a chest X-ray and radiological text prompts.
-Model weights are available at
-[huggingface.co/peterhan91/CLEAR](https://huggingface.co/peterhan91/CLEAR).
+`load_pretrained()` downloads the released checkpoint and returns both the model
+and the preprocessing transform used for inference:
 
 ```python
 import torch
 from PIL import Image
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize, InterpolationMode
 
-from clear.model import CLIP
-from clear import tokenize
-from examples.train import load_clip
+from clear import load_pretrained, tokenize
 
-# 1. Load the CLEAR checkpoint (DINOv2 ViT-B/14 + text encoder).
-model = load_clip(
-    model_path="checkpoints/dinov2-multi-v1.0_vitb/best_model.pt",
-    use_dinov2=True,
-    dinov2_model_name="dinov2_vitb14",
-)
-model.eval()
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = load_pretrained(device=device)
 
-# 2. Preprocess a chest X-ray.
-preprocess = Compose([
-    Resize(448, interpolation=InterpolationMode.BICUBIC),
-    CenterCrop(448),
-    ToTensor(),
-    Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-device = next(model.parameters()).device
-image = preprocess(Image.open("path/to/cxr.jpg").convert("RGB")).unsqueeze(0).to(device)
+image = preprocess(
+    Image.open("path/to/cxr.jpg").convert("RGB")
+).unsqueeze(0).to(device)
+text = tokenize(["pleural effusion", "no pleural effusion"]).to(device)
 
-# 3. Encode image and text.
-with torch.no_grad():
-    image_features = model.encode_image(image)
-    text_tokens = tokenize(["pleural effusion", "no pleural effusion"]).to(device)
-    text_features = model.encode_text(text_tokens)
+with torch.inference_mode():
+    image_features = torch.nn.functional.normalize(model.encode_image(image), dim=-1)
+    text_features = torch.nn.functional.normalize(model.encode_text(text), dim=-1)
+    pair_scores = (image_features @ text_features.T).softmax(dim=-1)
 
-    # 4. Cosine similarity → softmax probability.
-    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-    logits = (image_features @ text_features.T).softmax(dim=-1)
-
-print(logits)  # [[prob_positive, prob_negative]]
+print(pair_scores)  # [[positive_score, negative_score]]
 ```
 
-The full CLEAR pipeline projects these concept similarity scores through
-LLM-derived semantic embeddings (SFR-Embedding-Mistral) for auditable
-zero-shot classification. See `examples/` for benchmarking, concept
-bottleneck models, and model auditing scripts.
+This is a **backbone demonstration**: it compares one image with two text prompts
+in the shared 768-dimensional image-text space. It does not reproduce the full
+CLEAR concept projection, auditing experiments, or intervention reported in the
+paper.
 
-## Repository Layout
+The same path is available as a command-line example. Adding `--top-concepts`
+also retrieves the highest-scoring observations from the complete concept bank;
+this option downloads the approximately 1.1 GB text-encoder embedding matrix.
 
+```bash
+python examples/quickstart.py path/to/cxr.jpg --top-concepts 10
 ```
-src/clear/        Core library modules (CLIP loader, concept bank, zero-shot pipeline, metrics).
-examples/         Research scripts and notebooks rewritten to import the packaged modules.
-scripts/          Standalone data preparation and legacy utilities.
-pyproject.toml    Packaging metadata for building or installing CLEAR.
-README.md         This document.
-LICENSE           Apache-2.0 licence text.
+
+## Full concept pipeline
+
+The full published framework follows four stages:
+
+1. Encode a chest X-ray with the released image encoder.
+2. Compute similarities with all 368,294 CLEAR text-encoded observations.
+3. Multiply the concept-similarity vector by the aligned LLM concept embeddings
+   to obtain a concept-based image embedding.
+4. Use that representation for positive-negative zero-shot prompts, supervised
+   probes, auditing analyses, or concept bottleneck models.
+
+The released assets are hosted together on
+[Hugging Face](https://huggingface.co/peterhan91/CLEAR/tree/main):
+
+| File | Contents | Role |
+| --- | --- | --- |
+| `best_model.pt` | CLEAR DINOv2 ViT-B/14 image encoder and paired text encoder | Produces 768-dimensional image and text features |
+| `mimic_concepts.csv` | Ordered vocabulary of 368,294 radiological observations | Defines the rows shared by both concept-embedding files |
+| `concept_embeddings_368294.pt` | 368,294 x 768 CLEAR text-encoder embeddings | Computes image-observation similarity scores |
+| `concepts_embeddings_sfr_mistral.pickle` | 368,294 x 4,096 SFR-Embedding-Mistral embeddings | Projects similarity scores into the paper's LLM semantic space |
+
+`ConceptBank.from_files()` supports the released tensor formats. Because Python
+pickle can execute code while loading, the SFR asset requires the explicit
+`allow_unsafe_pickle=True` opt-in; use that option only with the official,
+trusted artifact.
+
+See [`examples/concepts`](examples/concepts) for concept projection, zero-shot,
+linear-probing, and concept-bottleneck research scripts, and
+[`examples/model_auditing`](examples/model_auditing) for the auditing analyses.
+These scripts expose the study workflow but are not a single-command reproduction
+of every paper result: they require the released assets, access to the relevant
+evaluation datasets, and experiment-specific paths and configuration.
+
+## Reproducibility notes
+
+- Use the released preprocessing returned by `load_pretrained()`; the published
+  model was evaluated with 448 x 448 inputs.
+- For a fixed model snapshot, pass a specific Hugging Face commit hash through
+  the loader's `revision` argument rather than relying on the repository default.
+- Keep the concept vocabulary and both embedding matrices in exactly the same row
+  order. Misaligned rows invalidate the concept projection.
+- The full concept artifacts are large. Plan for sufficient disk and host memory;
+  the library streams concept chunks to the selected accelerator.
+- Evaluation datasets have their own access requirements and licences. This
+  repository does not redistribute the chest X-rays used in the study.
+- Exact cohort construction, statistical procedures, and source data are
+  documented in the
+  [published article](https://www.nature.com/articles/s41551-026-01741-4).
+
+## Intended use and limitations
+
+CLEAR is released for research on chest X-ray representation learning,
+concept-level analysis, zero-shot evaluation, model auditing, and interpretable
+model development. It is **not a medical device and is not validated for clinical
+decision-making**. Predictions and concept attributions require independent
+validation for each population, acquisition setting, and task. They should not
+be used to diagnose, treat, or triage patients.
+
+The Nature article states that the model weights and full concept bank are
+available for academic research. Review the terms accompanying the
+[Hugging Face assets](https://huggingface.co/peterhan91/CLEAR) and the licences of
+all upstream models and datasets before reuse.
+
+## Repository layout
+
+```text
+src/clear/        Core library: checkpoint loader, concept bank, pipeline, and metrics
+examples/         Research scripts for benchmarks, concepts, and model auditing
+scripts/          Data-preparation and legacy utilities
+pyproject.toml    Package and dependency metadata
+CITATION.cff      Machine-readable citation metadata
+LICENSE           Apache-2.0 licence text
 ```
 
 ## Citation
 
-If you find this work useful, please cite our paper:
+If you use CLEAR, please cite the published article:
 
 ```bibtex
 @article{han2026clear,
-  title={CLEAR: An Auditable Foundation Model for Radiology Grounded in Clinical Concepts},
-  author={Han, Tianyu and Wu, Riga and Tian, Yu and Khader, Firas and Adams, Lisa and Bressem, Keno and Davatzikos, Christos and Kather, Jakob Nikolas and Shen, Li and Mankoff, David and others},
-  journal={medRxiv},
-  pages={2026--01},
-  year={2026},
-  publisher={Cold Spring Harbor Laboratory Press}
+  author  = {Han, Tianyu and Wu, Riga and Tian, Yu and Khader, Firas and Adams, Lisa C. and Bressem, Keno K. and Davatzikos, Christos and Kather, Jakob Nikolas and Shen, Li and Mankoff, David A. and Barbosa, Jr., Eduardo Mortani and Truhn, Daniel},
+  title   = {{CLEAR}: an auditable foundation model for radiology grounded in clinical concepts},
+  journal = {Nature Biomedical Engineering},
+  year    = {2026},
+  doi     = {10.1038/s41551-026-01741-4},
+  url     = {https://doi.org/10.1038/s41551-026-01741-4}
 }
 ```
 
+GitHub also reads the machine-readable [`CITATION.cff`](CITATION.cff) file and
+offers a **Cite this repository** action.
+
 ## License
 
-All code in this repository is released under the Apache-2.0 License. Portions derived from the OpenAI
-CLIP repository retain the original copyright notice.
+The code in this repository is released under the Apache-2.0 License. Portions
+derived from OpenAI CLIP retain their original copyright notice. Model weights,
+concept assets, upstream models, and datasets may be governed by separate terms.
