@@ -202,3 +202,64 @@ offers a **Cite this repository** action.
 The code in this repository is released under the Apache-2.0 License. Portions
 derived from OpenAI CLIP retain their original copyright notice. Model weights,
 concept assets, upstream models, and datasets may be governed by separate terms.
+
+### Indiana CXR subset test on Tesla K80 / CUDA 10.2
+
+From the repository directory on your SSH server (Python **3.10**, git and
+internet access required):
+
+```bash
+bash scripts/setup_indiana_k80.sh
+bash scripts/run_indiana_k80.sh --subset-size 100
+```
+
+The dedicated `.venv-k80` pins PyTorch 1.12.1+cu102 and torchvision 0.13.1+cu102
+instead of installing the project's modern PyTorch dependencies. The runner uses
+`PYTHONPATH=src`, a pinned DINOv2 checkout, disabled xFormers, FP32, and ordinary
+attention for PyTorch 1.12. Do not run `pip install -e .` in this environment.
+Python 3.10 must already be installed; choose its path with
+`PYTHON_BIN=/path/to/python3.10 bash scripts/setup_indiana_k80.sh`.
+
+Default settings: GPUs `0,1`, batch size 2 (one image per GPU), 100 randomly
+selected frontal studies, seed 42, original 448×448 preprocessing. This is
+zero-shot CLEAR backbone evaluation of cardiomegaly, pleural effusion, pneumonia,
+atelectasis and pneumothorax. The first run downloads the **full** Kaggle archive
+from the supplied URL and the released CLEAR checkpoint; subsequent runs reuse
+local data and model caches. It does not download the large concept bank.
+
+To keep running after disconnecting SSH:
+
+```bash
+nohup bash scripts/run_indiana_k80.sh --subset-size 100 > indiana-launch.log 2>&1 &
+tail -f indiana-launch.log
+```
+
+Each run saves `subset.csv`, `predictions.csv`, `metrics.json`, and `run.log` in a
+new `results/indiana_<UTC timestamp>_<PID>/` directory. Predictions include report
+fields, image paths, reference tags and paired-prompt scores. Metrics include
+per-disease AUROC, average precision, F1 at 0.5, class counts, runtime and GPU
+information. Single-class subsets receive `null` AUROC/AP. The scores are not
+calibrated clinical probabilities. Labels come from exact semicolon-separated
+`Problems` tags, with absent tags treated as negative; these are weak study-level
+annotations. This random subset is an exploratory check, not a published test
+split or a reproduction of the full CLEAR concept/auditing benchmark.
+
+Additional commands:
+
+```bash
+# Choose two physical GPUs and a larger subset.
+CUDA_VISIBLE_DEVICES=1,2 bash scripts/run_indiana_k80.sh --subset-size 500
+# Reduce memory use; with batch size 1 only one GPU handles each batch.
+bash scripts/run_indiana_k80.sh --batch-size 1
+# Use already extracted data or a local checkpoint.
+bash scripts/run_indiana_k80.sh --data-dir /path/to/indiana --checkpoint /path/to/best_model.pt
+# Download and save only the subset manifest, without loading a model.
+bash scripts/run_indiana_k80.sh --prepare-only
+```
+
+If Kaggle blocks the anonymous API request, download the archive from
+[the dataset page](https://www.kaggle.com/datasets/raddar/chest-xrays-indiana-university)
+using your account and extract it under `data/indiana/`. The runner finds the two
+CSV files and PNG images recursively. GPU kernel checks run before model loading;
+actual compatibility and memory use must still be verified on the SSH server.
+The CUDA wheel versions follow [PyTorch's official previous-version instructions](https://pytorch.org/get-started/previous-versions/#v1121).

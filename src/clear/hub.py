@@ -5,6 +5,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple
 import warnings
+import os
+import types
 
 import torch
 import torch.nn as nn
@@ -187,6 +189,10 @@ def _cached_dinov2_repo() -> Optional[Path]:
 
 
 def _build_dinov2_backbone(*, local_files_only: bool) -> nn.Module:
+    local_repo = os.environ.get("CLEAR_DINOV2_REPO")
+    if local_repo:
+        return torch.hub.load(local_repo, "dinov2_vitb14_reg", source="local",
+                              pretrained=False, verbose=False)
     cached_repo = _cached_dinov2_repo()
     if cached_repo is not None:
         return torch.hub.load(
@@ -241,7 +247,28 @@ def _build_model(
         _build_dinov2_backbone(local_files_only=local_files_only),
         output_dim=config["embed_dim"],
     )
+    if not hasattr(torch.nn.functional, "scaled_dot_product_attention"):
+        # PyTorch 1.12 / CUDA 10.2: ordinary FP32 attention on Kepler GPUs.
+        for block in model.visual.backbone.blocks:
+            block.attn.forward = types.MethodType(_legacy_attention, block.attn)
     return model
+
+
+def _legacy_attention(self: nn.Module, x: torch.Tensor, attn_bias=None) -> torch.Tensor:
+    if attn_bias is not None:
+        raise ValueError("Legacy CLEAR inference supports dense image batches only")
+    batch, tokens, channels = x.shape
+    qkv = self.qkv(x).reshape(batch, tokens, 3, self.num_heads,
+                              channels // self.num_heads).permute(2, 0, 3, 1, 4)
+    q, k, v = qkv.unbind(0)
+    weights = ((q * self.scale) @ k.transpose(-2, -1)).softmax(dim=-1)
+    dropout = self.attn_drop
+    if isinstance(dropout, nn.Module):
+        weights = dropout(weights)
+    elif self.training and dropout:
+        weights = torch.nn.functional.dropout(weights, p=float(dropout))
+    out = (weights @ v).transpose(1, 2).reshape(batch, tokens, channels)
+    return self.proj_drop(self.proj(out))
 
 
 def load_pretrained(

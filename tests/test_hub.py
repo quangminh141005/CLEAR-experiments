@@ -139,3 +139,18 @@ def test_cxr_preprocess_converts_grayscale_and_uses_published_normalization() ->
 def test_cxr_preprocess_rejects_invalid_sizes(image_size) -> None:
     with pytest.raises(ValueError, match="positive integer"):
         hub.build_cxr_preprocess(image_size=image_size)
+
+
+def test_legacy_attention_matches_scaled_dot_product():
+    from types import SimpleNamespace
+    torch.manual_seed(42)
+    attention = SimpleNamespace(
+        qkv=nn.Linear(16, 48), num_heads=4, scale=0.5,
+        attn_drop=0.0, training=False, proj=nn.Linear(16, 16),
+        proj_drop=nn.Identity(),
+    )
+    x = torch.randn(2, 9, 16)
+    q, k, v = attention.qkv(x).reshape(2, 9, 3, 4, 4).permute(2, 0, 3, 1, 4).unbind(0)
+    reference = torch.nn.functional.scaled_dot_product_attention(q, k, v)
+    reference = attention.proj(reference.transpose(1, 2).reshape(2, 9, 16))
+    torch.testing.assert_close(hub._legacy_attention(attention, x), reference)
