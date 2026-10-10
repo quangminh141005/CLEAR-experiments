@@ -209,16 +209,29 @@ From the repository directory on your SSH server (Python **3.10**, git and
 internet access required):
 
 ```bash
+conda create -n clear-k80 python=3.10 pip -y
+conda activate clear-k80
 bash scripts/setup_indiana_k80.sh
 bash scripts/run_indiana_k80.sh --subset-size 100
 ```
 
-The dedicated `.venv-k80` pins PyTorch 1.12.1+cu102 and torchvision 0.13.1+cu102
-instead of installing the project's modern PyTorch dependencies. The runner uses
-`PYTHONPATH=src`, a pinned DINOv2 checkout, disabled xFormers, FP32, and ordinary
-attention for PyTorch 1.12. Do not run `pip install -e .` in this environment.
-Python 3.10 must already be installed; choose its path with
-`PYTHON_BIN=/path/to/python3.10 bash scripts/setup_indiana_k80.sh`.
+The setup installs root `requirements.txt` into your **active Conda environment**,
+pinning PyTorch 1.12.1+cu102 and torchvision 0.13.1+cu102. It also fetches the
+pinned DINOv2 source checkout. Both scripts use `python` from the active environment;
+they do not create or activate an environment. You can use an existing Python 3.10
+Conda environment instead of creating `clear-k80`.
+
+To install only Python dependencies manually:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Run the setup script once as well to prepare DINOv2 source. The runner uses
+`PYTHONPATH=src`, disabled xFormers, FP32, and ordinary attention for PyTorch 1.12.
+Do not run `pip install -e .` in this environment, since the project's modern
+PyTorch requirements conflict with the K80 pins. Activate the Conda environment
+before running any of the commands below.
 
 Default settings: GPUs `0,1`, batch size 2 (one image per GPU), 100 randomly
 selected frontal studies, seed 42, original 448×448 preprocessing. This is

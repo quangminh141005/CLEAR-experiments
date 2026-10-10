@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PYTHON_BIN=${PYTHON_BIN:-python3.10}
-"$PYTHON_BIN" -m venv .venv-k80
-.venv-k80/bin/python -m pip install 'pip<25'
-.venv-k80/bin/python -m pip install torch==1.12.1+cu102 torchvision==0.13.1+cu102 --extra-index-url https://download.pytorch.org/whl/cu102
-.venv-k80/bin/python -m pip install -r scripts/requirements-k80.txt
+if [[ -z "${CONDA_PREFIX:-}" ]]; then
+    printf 'Activate your Python 3.10 Conda environment first.\n' >&2
+    exit 1
+fi
+python -c 'import sys; assert sys.version_info[:2] == (3, 10), "K80 setup requires Python 3.10"'
+python -m pip install -r requirements.txt
 mkdir -p .cache
 if [[ ! -d .cache/dinov2/.git ]]; then
     git clone https://github.com/facebookresearch/dinov2.git .cache/dinov2
