@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# Server-side only. Creates a dedicated venv; never changes drivers/system CUDA.
+# Server-side only. Installs into the active Conda environment.
 set -euo pipefail
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 PROFILE=auto
-PYTHON_BIN=${PYTHON_BIN:-python3.10}
-ENV_DIR=${CLEAR_ENV_DIR:-"$REPO_DIR/.venv-clear"}
 DINO_REV=7764ea0f912e53c92e82eb78a2a1631e92725fc8
 while (($#)); do
     case "$1" in
         --profile) PROFILE=$2; shift 2 ;;
-        --python) PYTHON_BIN=$2; shift 2 ;;
-        --env-dir) ENV_DIR=$2; shift 2 ;;
-        -h|--help) printf 'Usage: bash setup.sh [--profile auto|k80|cuda|cpu|prompts] [--python python3.10] [--env-dir PATH]\n'; exit 0 ;;
+        -h|--help) printf 'Usage: bash setup.sh [--profile auto|k80|cuda|cpu|prompts]\nActivate a dedicated Python 3.10 Conda environment first.\n'; exit 0 ;;
         *) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
     esac
 done
-command -v "$PYTHON_BIN" >/dev/null || { printf 'Install Python 3.10 plus venv manually, or provide --python.\n' >&2; exit 1; }
-"$PYTHON_BIN" -c 'import sys; assert sys.version_info[:2] == (3,10), "This reproducible stack requires Python 3.10"'
+if [[ -z "${CONDA_PREFIX:-}" || ! -x "$CONDA_PREFIX/bin/python" ]]; then
+    printf 'Activate a Python 3.10 Conda environment first, for example:\nconda create -n clear-k80 python=3.10 pip -y\nconda activate clear-k80\n' >&2
+    exit 1
+fi
+ENV_PREFIX=$CONDA_PREFIX
+PY="$ENV_PREFIX/bin/python"
+"$PY" -c 'import pathlib, sys; assert sys.version_info[:2] == (3,10), "This reproducible stack requires Python 3.10"; print("Installing into Conda environment:", pathlib.Path(sys.prefix).resolve())'
 GPU_NAMES=""
 if command -v nvidia-smi >/dev/null; then
     nvidia-smi || true
@@ -33,12 +34,6 @@ case "$PROFILE" in k80|cuda|cpu|prompts) ;; *) printf 'Unsupported profile %s\n'
 if [[ "$PROFILE" == cuda && "$GPU_NAMES" == *K80* ]]; then
     printf 'K80 detected: use --profile k80. The modern CUDA stack cannot run sm_37.\n' >&2; exit 1
 fi
-if [[ -e "$ENV_DIR" ]]; then
-    printf 'Environment path already exists: %s. Choose a fresh --env-dir to preserve it.\n' "$ENV_DIR" >&2; exit 1
-fi
-"$PYTHON_BIN" -m venv "$ENV_DIR"
-ENV_DIR=$(cd -- "$ENV_DIR" && pwd)
-PY="$ENV_DIR/bin/python"
 "$PY" -m pip install pip==24.3.1 setuptools==77.0.3 wheel==0.44.0
 if [[ "$PROFILE" == k80 ]]; then
     # Kepler 3.7: retain the existing repository's CUDA 10.2 / PyTorch 1.12 stack.
@@ -69,11 +64,12 @@ fi
     printf 'export XFORMERS_DISABLED=1\n'
     if [[ -n "$DINO_DIR" ]]; then printf 'export CLEAR_DINOV2_REPO=%q\n' "$DINO_DIR"; fi
     printf 'export CLEAR_ASSET_DIR=%q\n' "$REPO_DIR/assets/clear"
-} > "$ENV_DIR/clear-env.sh"
-"$PY" -m pip freeze > "$ENV_DIR/requirements-resolved.txt"
+} > "$ENV_PREFIX/clear-env.sh"
+"$PY" -m pip freeze > "$ENV_PREFIX/requirements-resolved.txt"
 "$PY" -c 'import platform, torch, torchvision; print("Python",platform.python_version(),"Torch",torch.__version__,"Torchvision",torchvision.__version__,"wheel CUDA",torch.version.cuda,"GPU available",torch.cuda.is_available()); print("compiled architectures",torch.cuda.get_arch_list() if torch.cuda.is_available() else []); print("GPUs",[torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())])'
 if [[ "$PROFILE" == k80 ]]; then
     printf 'K80: compute capability 3.7, FP32 ordinary attention, batch 1 suggested. Driver must support CUDA 10.2 AND your Kepler card. No BF16, FlashAttention or xFormers. Verify sm_37 in architecture output on this server.\n'
 fi
-printf 'Setup finished. Activate with:\nsource %q\nsource %q\n' "$ENV_DIR/bin/activate" "$ENV_DIR/clear-env.sh"
+printf 'Setup finished for Conda environment %s. Configure CLEAR in the current shell with:\nsource %q\n' "$ENV_PREFIX" "$ENV_PREFIX/clear-env.sh"
+printf 'After opening another SSH shell, conda activate this environment and source its clear-env.sh again.\n'
 printf 'No model/dataset downloaded by setup. Full concept bank needs substantial host RAM (32–64 GiB recommended).\n'

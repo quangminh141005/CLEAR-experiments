@@ -38,7 +38,7 @@ the released bank; it does not regenerate concepts from evaluation reports,
 retrain encoders, or replace missing concepts. See the
 [original methods and Fig. 1](https://www.nature.com/articles/s41551-026-01741-4).
 
-## 1. Set paths and create isolated environments
+## 1. Set paths and activate Conda environments
 
 Run all following commands **yourself on the SSH server**, from this repository:
 
@@ -51,18 +51,21 @@ export SERVER_ASSETS=/your/storage/clear-assets
 export SERVER_RESULTS="$CLEAR_REPO/results/reproduction"
 ```
 
-Install Python 3.10 with `venv`, git, curl and unzip manually if unavailable.
-`setup.sh` never changes system packages, CUDA, the NVIDIA driver or the active
-environment. It refuses an existing environment path. Requirements are pinned;
-Torch is installed separately for the selected hardware. Keep the resulting
-`requirements-resolved.txt` for the research record.
+Install Conda, git, curl and unzip manually if unavailable. Create and activate a
+dedicated Python 3.10 Conda environment before running `setup.sh`. You may use an
+existing dedicated Python 3.10 Conda environment instead of creating a new one.
+The script installs pinned dependencies into the **active Conda environment**;
+it does not create another environment or change system packages, CUDA or the
+NVIDIA driver. Torch is installed separately for the selected hardware. Keep
+`$CONDA_PREFIX/requirements-resolved.txt` for the research record.
 
 **Tesla K80 (Kepler, compute capability 3.7):**
 
 ```bash
-bash setup.sh --profile k80 --python python3.10 --env-dir "$CLEAR_REPO/.venv-clear-k80"
-source "$CLEAR_REPO/.venv-clear-k80/bin/activate"
-source "$CLEAR_REPO/.venv-clear-k80/clear-env.sh"
+conda create -n clear-k80 python=3.10 pip -y
+conda activate clear-k80
+bash setup.sh --profile k80
+source "$CONDA_PREFIX/clear-env.sh"
 ```
 
 This retains the repository's Python 3.10 / torch 1.12.1+cu102 /
@@ -76,12 +79,16 @@ Modern CUDA or CPU alternatives:
 
 ```bash
 # CUDA 11.8-compatible NVIDIA GPU/driver; not K80.
-bash setup.sh --profile cuda --env-dir "$CLEAR_REPO/.venv-clear-cuda"
-source "$CLEAR_REPO/.venv-clear-cuda/bin/activate"
-source "$CLEAR_REPO/.venv-clear-cuda/clear-env.sh"
+conda create -n clear-cuda python=3.10 pip -y
+conda activate clear-cuda
+bash setup.sh --profile cuda
+source "$CONDA_PREFIX/clear-env.sh"
 
-# Or CPU only, in a different fresh environment.
-bash setup.sh --profile cpu --env-dir "$CLEAR_REPO/.venv-clear-cpu"
+# Or CPU only, in a separate Conda environment.
+conda create -n clear-cpu python=3.10 pip -y
+conda activate clear-cpu
+bash setup.sh --profile cpu
+source "$CONDA_PREFIX/clear-env.sh"
 ```
 
 Modern profiles pin torch 2.5.1 / torchvision 0.20.1. `--profile auto` detects
@@ -200,9 +207,10 @@ CUDA environment and install the same pinned transformers dependencies there,
 never in the K80 environment.
 
 ```bash
-bash setup.sh --profile prompts --env-dir "$CLEAR_REPO/.venv-prompts"
-source "$CLEAR_REPO/.venv-prompts/bin/activate"
-source "$CLEAR_REPO/.venv-prompts/clear-env.sh"
+conda create -n clear-prompts python=3.10 pip -y
+conda activate clear-prompts
+bash setup.sh --profile prompts
+source "$CONDA_PREFIX/clear-env.sh"
 SFR_REV=$(python -c 'from huggingface_hub import HfApi; print(HfApi().model_info("Salesforce/SFR-Embedding-Mistral").sha)')
 printf '%s\n' "$SFR_REV"
 
@@ -214,8 +222,8 @@ python scripts/prepare_clear_prompts.py --dataset chexpert --revision "$SFR_REV"
   --device cpu --output "$SERVER_ASSETS/prompts/chexpert.npz"
 
 # Return to the K80 environment before image inference.
-source "$CLEAR_REPO/.venv-clear-k80/bin/activate"
-source "$CLEAR_REPO/.venv-clear-k80/clear-env.sh"
+conda activate clear-k80
+source "$CONDA_PREFIX/clear-env.sh"
 ```
 
 The prompt model is [Salesforce/SFR-Embedding-Mistral](https://huggingface.co/Salesforce/SFR-Embedding-Mistral),
