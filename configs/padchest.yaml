@@ -1,0 +1,11 @@
+dataset: padchest
+inference_mode: clear
+batch_size: 2
+concept_chunk_size: 512
+view: all
+unmentioned_policy: unknown
+normal_policy: unknown
+missing_images: skip
+image_policy: 8bit
+bootstrap: 1000
+seed: 42

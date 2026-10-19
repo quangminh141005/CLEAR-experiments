@@ -1,0 +1,99 @@
+dataset,disease,paper_finding,auroc,ci_low,ci_high,positive_support,table,experiment
+indiana,pleural effusion,pleural effusion,0.935,0.920,0.948,286,S11,zero-shot
+indiana,consolidation,consolidation,0.926,0.902,0.948,53,S11,zero-shot
+indiana,pulmonary edema,pulmonary edema,0.887,0.852,0.915,87,S11,zero-shot
+indiana,pneumonia,pneumonia,0.882,0.845,0.915,77,S11,zero-shot
+indiana,pulmonary fibrosis,pulmonary fibrosis,0.881,0.817,0.933,34,S11,zero-shot
+indiana,pulmonary congestion,pulmonary congestion,0.872,0.844,0.897,135,S11,zero-shot
+indiana,airspace disease,airspace disease,0.845,0.821,0.868,224,S11,zero-shot
+indiana,cardiomegaly,cardiomegaly,0.840,0.827,0.853,655,S11,zero-shot
+indiana,infiltrate,infiltrate,0.798,0.759,0.831,116,S11,zero-shot
+indiana,mass,mass,0.794,0.732,0.851,32,S11,zero-shot
+indiana,atelectasis,pulmonary atelectasis,0.776,0.758,0.794,616,S11,zero-shot
+indiana,pulmonary emphysema,pulmonary emphysema,0.750,0.680,0.811,74,S11,zero-shot
+indiana,pneumothorax,pneumothorax,0.735,0.658,0.806,44,S11,zero-shot
+indiana,cicatrix,cicatrix,0.729,0.704,0.754,355,S11,zero-shot
+indiana,opacity,opacity,0.717,0.699,0.734,840,S11,zero-shot
+indiana,normal,normal,0.681,0.669,0.693,2695,S11,zero-shot
+indiana,atherosclerosis,atherosclerosis,0.661,0.630,0.692,233,S11,zero-shot
+indiana,arthritis,arthritis,0.652,0.584,0.718,65,S11,zero-shot
+indiana,emphysema,emphysema,0.647,0.598,0.697,116,S11,zero-shot
+indiana,deformity,deformity,0.641,0.606,0.678,210,S11,zero-shot
+indiana,kyphosis,kyphosis,0.624,0.559,0.689,58,S11,zero-shot
+indiana,calcified granuloma,calcified granuloma,0.605,0.580,0.629,510,S11,zero-shot
+indiana,calcinosis,calcinosis,0.586,0.562,0.608,558,S11,zero-shot
+indiana,nodule,nodule,0.586,0.546,0.625,211,S11,zero-shot
+indiana,granuloma,granuloma,0.577,0.523,0.626,103,S11,zero-shot
+indiana,spondylosis,spondylosis,0.566,0.514,0.619,126,S11,zero-shot
+indiana,osteophyte,osteophyte,0.545,0.502,0.589,137,S11,zero-shot
+indiana,granulomatous disease,granulomatous disease,0.518,0.482,0.551,213,S11,zero-shot
+indiana,scoliosis,scoliosis,0.505,0.458,0.549,177,S11,zero-shot
+indiana,lucency,lucency,0.466,0.391,0.544,51,S11,zero-shot
+padchest,pleural effusion,pleural effusion,0.966,0.958,0.972,376,S9,zero-shot
+padchest,pulmonary mass,pulmonary mass,0.941,0.907,0.968,42,S9,zero-shot
+padchest,consolidation,consolidation,0.916,0.893,0.936,63,S9,zero-shot
+padchest,heart insufficiency,heart insufficiency,0.915,0.896,0.931,95,S9,zero-shot
+padchest,hilar congestion,hilar congestion,0.845,0.820,0.869,117,S9,zero-shot
+padchest,hypoexpansion,hypoexpansion,0.842,0.792,0.885,27,S9,zero-shot
+padchest,interstitial pattern,interstitial pattern,0.841,0.822,0.860,368,S9,zero-shot
+padchest,laminar atelectasis,laminar atelectasis,0.840,0.814,0.865,235,S9,zero-shot
+padchest,pneumonia,pneumonia,0.835,0.811,0.856,336,S9,zero-shot
+padchest,cardiomegaly,cardiomegaly,0.825,0.813,0.835,739,S9,zero-shot
+padchest,atelectasis,atelectasis,0.820,0.782,0.853,145,S9,zero-shot
+padchest,lobar atelectasis,lobar atelectasis,0.818,0.760,0.874,35,S9,zero-shot
+padchest,infiltrates,infiltrates,0.795,0.767,0.821,253,S9,zero-shot
+padchest,alveolar pattern,alveolar pattern,0.791,0.769,0.813,271,S9,zero-shot
+padchest,ground glass pattern,ground glass pattern,0.779,0.705,0.847,31,S9,zero-shot
+padchest,rib fracture,rib fracture,0.777,0.729,0.820,32,S9,zero-shot
+padchest,bronchiectasis,bronchiectasis,0.762,0.726,0.801,122,S9,zero-shot
+padchest,pleural thickening,pleural thickening,0.762,0.700,0.821,47,S9,zero-shot
+padchest,costophrenic angle blunting,costophrenic angle blunting,0.759,0.734,0.784,345,S9,zero-shot
+padchest,tuberculosis sequelae,tuberculosis sequelae,0.758,0.691,0.817,42,S9,zero-shot
+padchest,hypoexpansion basal,hypoexpansion basal,0.736,0.676,0.794,36,S9,zero-shot
+padchest,hiatal hernia,hiatal hernia,0.734,0.704,0.764,115,S9,zero-shot
+padchest,hemidiaphragm elevation,hemidiaphragm elevation,0.726,0.694,0.755,149,S9,zero-shot
+padchest,aortic button enlargement,aortic button enlargement,0.726,0.666,0.785,49,S9,zero-shot
+padchest,descendent aortic elongation,descendent aortic elongation,0.717,0.666,0.766,35,S9,zero-shot
+padchest,aortic atheromatosis,aortic atheromatosis,0.699,0.676,0.722,322,S9,zero-shot
+padchest,supra aortic elongation,supra aortic elongation,0.694,0.630,0.754,28,S9,zero-shot
+padchest,chronic changes,chronic changes,0.685,0.668,0.703,749,S9,zero-shot
+padchest,aortic elongation,aortic elongation,0.685,0.668,0.700,623,S9,zero-shot
+padchest,nodule,nodule,0.665,0.628,0.705,149,S9,zero-shot
+padchest,osteopenia,osteopenia,0.663,0.583,0.729,44,S9,zero-shot
+padchest,fibrotic band,fibrotic band,0.654,0.622,0.685,250,S9,zero-shot
+padchest,hyperinflated lung,hyperinflated lung,0.650,0.559,0.737,36,S9,zero-shot
+padchest,calcified granuloma,calcified granuloma,0.647,0.602,0.689,141,S9,zero-shot
+padchest,hilar enlargement,hilar enlargement,0.646,0.594,0.695,91,S9,zero-shot
+padchest,vertebral anterior compression,vertebral anterior compression,0.639,0.586,0.690,116,S9,zero-shot
+padchest,kyphosis,kyphosis,0.630,0.598,0.663,221,S9,zero-shot
+padchest,copd signs,copd signs,0.615,0.599,0.633,905,S9,zero-shot
+padchest,calcified densities,calcified densities,0.612,0.552,0.672,65,S9,zero-shot
+padchest,granuloma,granuloma,0.611,0.530,0.691,35,S9,zero-shot
+padchest,mediastinic lipomatosis,mediastinic lipomatosis,0.610,0.541,0.671,28,S9,zero-shot
+padchest,sclerotic bone lesion,sclerotic bone lesion,0.598,0.487,0.696,30,S10,zero-shot
+padchest,bullas,bullas,0.597,0.501,0.688,33,S10,zero-shot
+padchest,vascular hilar enlargement,vascular hilar enlargement,0.588,0.556,0.619,276,S10,zero-shot
+padchest,pseudonodule,pseudonodule,0.587,0.544,0.634,145,S10,zero-shot
+padchest,diaphragmatic eventration,diaphragmatic eventration,0.586,0.536,0.632,76,S10,zero-shot
+padchest,nipple shadow,nipple shadow,0.576,0.510,0.642,76,S10,zero-shot
+padchest,flattened diaphragm,flattened diaphragm,0.568,0.486,0.649,36,S10,zero-shot
+padchest,scoliosis,scoliosis,0.566,0.543,0.589,544,S10,zero-shot
+padchest,volume loss,volume loss,0.563,0.523,0.602,156,S10,zero-shot
+padchest,apical pleural thickening,apical pleural thickening,0.558,0.524,0.589,292,S10,zero-shot
+padchest,goiter,goiter,0.541,0.473,0.603,54,S10,zero-shot
+padchest,air trapping,air trapping,0.514,0.484,0.545,354,S10,zero-shot
+padchest,gynecomastia,gynecomastia,0.512,0.452,0.568,62,S10,zero-shot
+padchest,azygos lobe,azygos lobe,0.475,0.377,0.568,36,S10,zero-shot
+chexpert,atelectasis,Atelectasis,0.876,0.876,0.876,,S13,supervised linear-probe
+chexpert,cardiomegaly,Cardiomegaly,0.867,0.867,0.868,,S13,supervised linear-probe
+chexpert,consolidation,Consolidation,0.905,0.905,0.905,,S13,supervised linear-probe
+chexpert,edema,Edema,0.884,0.884,0.884,,S13,supervised linear-probe
+chexpert,enlarged cardiomediastinum,Enlarged Cardiomediastinum,0.727,0.727,0.728,,S13,supervised linear-probe
+chexpert,fracture,Fracture,0.720,0.719,0.720,,S13,supervised linear-probe
+chexpert,lung lesion,Lung Lesion,0.886,0.885,0.886,,S13,supervised linear-probe
+chexpert,lung opacity,Lung Opacity,0.933,0.933,0.933,,S13,supervised linear-probe
+chexpert,pleural effusion,Pleural Effusion,0.945,0.945,0.945,,S13,supervised linear-probe
+chexpert,pleural other,Pleural Other,0.908,0.908,0.908,,S13,supervised linear-probe
+chexpert,pneumonia,Pneumonia,0.839,0.838,0.841,,S13,supervised linear-probe
+chexpert,pneumothorax,Pneumothorax,0.894,0.894,0.894,,S13,supervised linear-probe
+chexpert,support devices,Support Devices,0.928,0.928,0.928,,S13,supervised linear-probe

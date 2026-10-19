@@ -182,5 +182,19 @@ cython_debug/
 .DS_Store
 .vscode/settings.json
 
+# Evaluation data, credentials, weights, and generated runs stay on the server.
+/data/
+/assets/
+/.venv-clear*/
+/.venv-prompts*/
+/results/
+/reports/CLEAR_evaluation*.md
+/reports/CLEAR_evaluation*.docx
+*.pt
+*.pth
+*.pickle
+*.pkl
+kaggle.json
+
 
 AGENTS.md

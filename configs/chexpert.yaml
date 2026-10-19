@@ -1,0 +1,11 @@
+dataset: chexpert
+inference_mode: clear
+batch_size: 2
+concept_chunk_size: 512
+view: all
+uncertain_policy: ignore
+missing_policy: ignore
+missing_images: error
+image_policy: 8bit
+bootstrap: 1000
+seed: 42
